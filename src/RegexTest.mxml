@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					   xmlns:s="library://ns.adobe.com/flex/spark" 
+					   xmlns:mx="library://ns.adobe.com/flex/mx"
+					   initialize="initializeHandler(event)"
+					   creationComplete="creationCompleteHandler(event)"
+					   windowMove="windowMoveHandler(event)"
+					   windowResize="windowResizeHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			import mx.events.FlexNativeWindowBoundsEvent;
+			import mx.events.ResizeEvent;
+			
+			private var _so:SharedObject;
+			
+			protected function initializeHandler(event:FlexEvent):void
+			{
+				_so = SharedObject.getLocal("data");
+				// previous prefs
+				actionGroup.selectedValue = _so.data.action;
+				regexText.text = _so.data.regex;
+				regexOptionsText.text = _so.data.regexOpts;
+				inputText.text = _so.data.input;
+				replaceInputText.text = _so.data.replaceInput;
+				// dimension
+				width = _so.data.width;
+				height = _so.data.height;
+				// location
+				nativeWindow.x = _so.data.x;
+				nativeWindow.y = _so.data.y;
+			}
+			
+			protected function creationCompleteHandler(event:FlexEvent):void
+			{
+				updateTest();
+			}
+			
+			protected function updateTest():void
+			{
+				var regexStr:String = regexText.text;
+				var regexOptsStr:String = regexOptionsText.text;
+				var regex:RegExp = new RegExp(regexStr,regexOptsStr);
+				var input:String = inputText.text;
+				var replaceInput:String = replaceInputText.text;
+				var output:String = "";
+				switch (actionGroup.selection)
+				{
+					case split:
+						var arr:Array = input.split(regex);
+						output = arr.join("\n");
+						break;
+					case match:
+						var arr2:Array = input.match(regex);
+						output = arr2 ? arr2.join("\n") : "";
+						break;
+					case replace:
+						output = input.replace(regex,replaceInput);
+						break;
+				}
+				outputText.text = output;
+				
+				// persist values
+				_so.setProperty("action",actionGroup.selectedValue);
+				_so.setProperty("regex",regexStr);
+				_so.setProperty("regexOpts",regexOptsStr);
+				_so.setProperty("input",input);
+				_so.setProperty("replaceInput",replaceInput);
+			}
+			
+			protected function windowMoveHandler(event:FlexNativeWindowBoundsEvent):void
+			{
+				_so.setProperty("x",nativeWindow.x);
+				_so.setProperty("y",nativeWindow.y);
+			}
+			
+			protected function windowResizeHandler(event:FlexNativeWindowBoundsEvent):void
+			{
+				_so.setProperty("width",width);
+				_so.setProperty("height",height);
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:RadioButtonGroup id="actionGroup" change="{updateTest()}"/>
+	</fx:Declarations>
+	
+	<s:Form width="100%" height="100%">
+		<s:FormItem label="Action">
+			<s:RadioButton id="split" label="Split" group="{actionGroup}"/>
+			<s:RadioButton id="match" label="Match" group="{actionGroup}"/>
+			<s:RadioButton id="replace" label="Replace" group="{actionGroup}"/>
+		</s:FormItem>
+		<s:FormItem label="Regex">
+			<s:TextInput id="regexText" width="100%" change="{updateTest()}"/>
+		</s:FormItem>
+		<s:FormItem label="Regex Options">
+			<s:TextInput id="regexOptionsText" width="100%" change="{updateTest()}"/>
+		</s:FormItem>
+		<s:FormItem label="Input">
+			<s:TextInput id="inputText" width="100%" change="{updateTest()}"/>
+		</s:FormItem>
+		<s:FormItem label="Replace Input"
+					visible="{replace.selected}" includeInLayout="{replace.selected}">
+			<s:TextInput id="replaceInputText" width="100%" change="{updateTest()}"/>
+		</s:FormItem>
+		<s:FormItem label="Output" width="100%" height="100%">
+			<s:TextArea id="outputText" width="100%" height="100%" editable="false"/>
+		</s:FormItem>
+	</s:Form>
+	
+</s:WindowedApplication>
